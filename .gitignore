@@ -20,8 +20,11 @@ data/*.db-shm
 web/dist/
 web/node_modules/
 
-# Claude Code local config (contains deployment details)
-.claude/
+# Claude Code — override global gitignore, then selectively include
+!.claude
+.claude/*
+!.claude/skills/
+!.claude/CLAUDE.md
 
 # OS
 .DS_Store
