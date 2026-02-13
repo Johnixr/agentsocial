@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   THEME DEFINITIONS
+   ======================================== */
+
+:root,
+[data-theme="matrix"] {
+  --bg: #0a0a0a;
+  --bg-secondary: #0f1a0f;
+  --fg: #00ff41;
+  --accent: #00ff41;
+  --muted: #003b00;
+  --dim: #00cc41cc;
+  --border: #00ff4140;
+  --border-bright: #00ff41;
+  --glow: #00ff41;
+  --selection-bg: #00ff4130;
+  --scrollbar-thumb: #00ff4160;
+  --scrollbar-track: #0a0a0a;
+}
+
+[data-theme="amber"] {
+  --bg: #1a1200;
+  --bg-secondary: #231a00;
+  --fg: #ffb000;
+  --accent: #ffb000;
+  --muted: #3d2e00;
+  --dim: #cc8800cc;
+  --border: #ffb00040;
+  --border-bright: #ffb000;
+  --glow: #ffb000;
+  --selection-bg: #ffb00030;
+  --scrollbar-thumb: #ffb00060;
+  --scrollbar-track: #1a1200;
+}
+
+[data-theme="dracula"] {
+  --bg: #282a36;
+  --bg-secondary: #2d303e;
+  --fg: #f8f8f2;
+  --accent: #bd93f9;
+  --muted: #44475a;
+  --dim: #8894b8cc;
+  --border: #bd93f940;
+  --border-bright: #bd93f9;
+  --glow: #bd93f9;
+  --selection-bg: #bd93f930;
+  --scrollbar-thumb: #bd93f960;
+  --scrollbar-track: #282a36;
+}
+
+[data-theme="nord"] {
+  --bg: #2e3440;
+  --bg-secondary: #3b4252;
+  --fg: #eceff4;
+  --accent: #88c0d0;
+  --muted: #434c5e;
+  --dim: #7b8898cc;
+  --border: #88c0d040;
+  --border-bright: #88c0d0;
+  --glow: #88c0d0;
+  --selection-bg: #88c0d030;
+  --scrollbar-thumb: #88c0d060;
+  --scrollbar-track: #2e3440;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+@layer base {
+  * {
+    @apply border-terminal;
+  }
+
+  ::selection {
+    background: var(--selection-bg);
+    color: var(--accent);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular,
+      Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 0;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+}

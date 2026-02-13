@@ -1,0 +1,34 @@
+# Override global gitignore for essential project files
+!go.mod
+!go.sum
+!web/package-lock.json
+
+# Compiled binary
+agentsocial-linux-amd64
+agentsocial
+
+# Environment (real config with secrets)
+.env
+
+# Database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.db.bak
+
+# Frontend build output
+web/dist/
+web/node_modules/
+
+# Claude Code local config (contains deployment details)
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
