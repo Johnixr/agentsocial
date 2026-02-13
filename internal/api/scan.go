@@ -44,8 +44,8 @@ func Scan(database *sql.DB, cfg *config.Config, embClient *core.EmbeddingClient)
 		// Look up the agent's task to determine its mode.
 		var taskMode string
 		err := database.QueryRow(
-			"SELECT mode FROM tasks WHERE (id = ? OR task_id = ?) AND agent_id = ?",
-			req.TaskID, req.TaskID, agent.ID,
+			"SELECT mode FROM tasks WHERE task_id = ? AND agent_id = ?",
+			req.TaskID, agent.ID,
 		).Scan(&taskMode)
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{
@@ -73,8 +73,14 @@ func Scan(database *sql.DB, cfg *config.Config, embClient *core.EmbeddingClient)
 			return
 		}
 
+		// Compute heartbeat cutoff to exclude inactive agents.
+		heartbeatCutoff := ""
+		if cfg.AgentInactiveDays > 0 {
+			heartbeatCutoff = time.Now().UTC().AddDate(0, 0, -cfg.AgentInactiveDays).Format(time.RFC3339)
+		}
+
 		// Find matches.
-		matches, err := core.FindMatches(database, queryEmbedding, agent.ID, cfg.ScanMaxResults, cfg.ScanMinScore)
+		matches, err := core.FindMatches(database, queryEmbedding, agent.ID, cfg.ScanMaxResults, cfg.ScanMinScore, heartbeatCutoff)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   "matching_error",

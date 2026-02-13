@@ -53,6 +53,10 @@ func main() {
 		log.Println("Embedding client initialized")
 	}
 
+	// Start background cleanup goroutine.
+	go core.StartCleanupTicker(database, cfg)
+	log.Println("Background cleanup ticker started (1h interval)")
+
 	// Setup router.
 	router := api.SetupRouter(database, cfg, embClient)
 

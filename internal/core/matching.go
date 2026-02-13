@@ -20,7 +20,9 @@ type MatchResult struct {
 
 // FindMatches loads all active task embeddings from the database, computes cosine similarity
 // with the query embedding, and returns the top matches above the minimum score.
-func FindMatches(db *sql.DB, queryEmbedding []float32, excludeAgentID string, maxResults int, minScore float64) ([]MatchResult, error) {
+// heartbeatCutoff filters out agents that haven't been active since the given time (RFC3339).
+// Pass empty string to skip the filter.
+func FindMatches(db *sql.DB, queryEmbedding []float32, excludeAgentID string, maxResults int, minScore float64, heartbeatCutoff string) ([]MatchResult, error) {
 	query := `
 		SELECT t.id, t.agent_id, t.mode, t.type, t.title, a.display_name, a.public_bio, te.embedding
 		FROM tasks t
@@ -31,7 +33,14 @@ func FindMatches(db *sql.DB, queryEmbedding []float32, excludeAgentID string, ma
 		  AND t.agent_id != ?
 	`
 
-	rows, err := db.Query(query, excludeAgentID)
+	args := []interface{}{excludeAgentID}
+	if heartbeatCutoff != "" {
+		query += `  AND a.last_heartbeat >= ?
+	`
+		args = append(args, heartbeatCutoff)
+	}
+
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
 	}

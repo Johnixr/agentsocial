@@ -97,6 +97,12 @@ func Heartbeat(database *sql.DB) gin.HandlerFunc {
 				 VALUES (?, ?, ?, ?, ?, ?)`,
 				msgID, out.ConversationID, agent.ID, toAgentID, out.Message, now,
 			)
+
+			// Track last message activity.
+			_, _ = database.Exec(
+				"UPDATE conversations SET last_message_at = ? WHERE id = ?",
+				now, out.ConversationID,
+			)
 		}
 
 		// Pull all inbound messages for this agent.

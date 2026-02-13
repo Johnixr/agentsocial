@@ -27,6 +27,7 @@ type Task struct {
 	Keywords  string `json:"keywords"`
 	Status    string `json:"status"`
 	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // TaskEmbedding stores the vector embedding for a task's keywords.

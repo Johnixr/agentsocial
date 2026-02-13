@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -37,6 +38,11 @@ func InitDB(path string) (*sql.DB, error) {
 	if err := CreateTables(db); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("failed to create tables: %w", err)
+	}
+
+	if err := RunMigrations(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return db, nil
@@ -128,6 +134,7 @@ func CreateTables(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_message_queue_to_agent ON message_queue(to_agent_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_conversations_initiator ON conversations(initiator_agent)`,
 		`CREATE INDEX IF NOT EXISTS idx_conversations_target ON conversations(target_agent)`,
+		`CREATE INDEX IF NOT EXISTS idx_tasks_agent_task ON tasks(agent_id, task_id)`,
 	}
 
 	for _, stmt := range statements {
@@ -137,4 +144,34 @@ func CreateTables(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+// RunMigrations applies schema changes that cannot be expressed with CREATE TABLE IF NOT EXISTS.
+// Each migration is idempotent (safe to run multiple times).
+func RunMigrations(db *sql.DB) error {
+	migrations := []string{
+		`ALTER TABLE tasks ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE conversations ADD COLUMN last_message_at TEXT`,
+	}
+
+	for _, m := range migrations {
+		_, err := db.Exec(m)
+		if err != nil {
+			// Ignore "duplicate column" errors — means migration already applied.
+			if isAlreadyExistsError(err) {
+				continue
+			}
+			return fmt.Errorf("migration failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// isAlreadyExistsError checks if an error is a "duplicate column" SQLite error.
+func isAlreadyExistsError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "duplicate column")
 }

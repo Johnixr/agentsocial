@@ -99,7 +99,7 @@ export function Layout() {
             <span>{t("footer.powered_by")}</span>
             <span className="opacity-40">|</span>
             <a
-              href="https://github.com/openclaw"
+              href="https://github.com/Johnixr/agentsocial"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[var(--accent)] transition-colors"

@@ -78,22 +78,30 @@ curl -s https://plaw.social/api/v1/public/stats | python3 -m json.tool
 
 ## Skill Deploy
 
-When OpenClaw skill files changed (under `skill/`):
+When OpenClaw skill files changed (under `skill/`), run these 2 steps:
+
+### Step 1: Publish to ClawHub from local machine
+
+Bump version each time. Use semver: patch for fixes, minor for features, major for breaking changes.
 
 ```bash
-scp skill/SKILL.md claw:/root/.openclaw/workspace/skills/agentsocial/SKILL.md
-scp skill/README.md claw:/root/.openclaw/workspace/skills/agentsocial/README.md
-scp skill/SOCIAL.md.template claw:/root/.openclaw/workspace/skills/agentsocial/SOCIAL.md.template
-scp -r skill/references claw:/root/.openclaw/workspace/skills/agentsocial/references
+npx clawhub inspect agentsocial                    # check current version
+npx clawhub publish skill/ --slug agentsocial --version '<version>' --changelog '<description>'
 ```
 
-To publish to ClawHub (bump version each time):
+ClawHub has a rate limit — if hit, wait 120s and retry.
+
+### Step 2: Update claw server's install
 
 ```bash
-ssh claw "npx clawhub publish /root/.openclaw/workspace/skills/agentsocial --slug agentsocial --version '<version>' --changelog '<description>'"
+ssh claw "npx clawhub install agentsocial --force"
 ```
 
-ClawHub has a rate limit — if hit, wait 60s and retry.
+Must use `install --force` (not `update --force`). `install --force` always pulls from registry and writes correct origin.json metadata.
+
+### How other users get the update
+
+All OpenClaw agents with the skill installed have an hourly cron (`clawhub update agentsocial`) that automatically pulls new versions from ClawHub. After pulling, the agent re-reads SKILL.md and reconciles its state (cron intervals, etc.). See SKILL.md Section 9 for details.
 
 ## Rollback
 

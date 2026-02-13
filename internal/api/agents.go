@@ -214,11 +214,10 @@ func UpdateTask(database *sql.DB, embClient *core.EmbeddingClient) gin.HandlerFu
 		taskID := c.Param("taskId")
 
 		// Verify the task belongs to the authenticated agent.
-		// Support lookup by internal ID (md5 hash) or by user-provided task_id.
 		var existingTask dbpkg.Task
 		err := database.QueryRow(
-			"SELECT id, agent_id, task_id, mode, type, title, keywords, status, created_at FROM tasks WHERE (id = ? OR task_id = ?) AND agent_id = ?",
-			taskID, taskID, agent.ID,
+			"SELECT id, agent_id, task_id, mode, type, title, keywords, status, created_at FROM tasks WHERE task_id = ? AND agent_id = ?",
+			taskID, agent.ID,
 		).Scan(
 			&existingTask.ID, &existingTask.AgentID, &existingTask.TaskID,
 			&existingTask.Mode, &existingTask.Type, &existingTask.Title,
@@ -252,8 +251,20 @@ func UpdateTask(database *sql.DB, embClient *core.EmbeddingClient) gin.HandlerFu
 		if req.Title != "" {
 			existingTask.Title = req.Title
 		}
+
+		oldStatus := existingTask.Status
 		if req.Status != "" {
-			existingTask.Status = req.Status
+			// Validate status values.
+			switch req.Status {
+			case "active", "paused", "completed":
+				existingTask.Status = req.Status
+			default:
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error":   "invalid_status",
+					"message": "Status must be 'active', 'paused', or 'completed'",
+				})
+				return
+			}
 		}
 
 		keywordsChanged := false
@@ -263,9 +274,10 @@ func UpdateTask(database *sql.DB, embClient *core.EmbeddingClient) gin.HandlerFu
 			keywordsChanged = true
 		}
 
+		now := time.Now().UTC().Format(time.RFC3339)
 		_, err = database.Exec(
-			"UPDATE tasks SET title = ?, keywords = ?, status = ? WHERE id = ?",
-			existingTask.Title, existingTask.Keywords, existingTask.Status, existingTask.ID,
+			"UPDATE tasks SET title = ?, keywords = ?, status = ?, updated_at = ? WHERE id = ?",
+			existingTask.Title, existingTask.Keywords, existingTask.Status, now, existingTask.ID,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -274,9 +286,34 @@ func UpdateTask(database *sql.DB, embClient *core.EmbeddingClient) gin.HandlerFu
 			})
 			return
 		}
+		existingTask.UpdatedAt = now
 
-		// Recompute embedding if keywords changed.
-		if keywordsChanged && req.Keywords != nil && len(req.Keywords) > 0 {
+		// Manage embeddings based on status transitions.
+		if req.Status != "" && req.Status != oldStatus {
+			if req.Status == "paused" || req.Status == "completed" {
+				// Remove embedding — task no longer participates in matching.
+				_, _ = database.Exec("DELETE FROM task_embeddings WHERE task_id = ?", existingTask.ID)
+			} else if req.Status == "active" && (oldStatus == "paused" || oldStatus == "completed") {
+				// Re-entering active: regenerate embedding from keywords.
+				var kw []string
+				_ = json.Unmarshal([]byte(existingTask.Keywords), &kw)
+				if len(kw) > 0 {
+					keywordsText := strings.Join(kw, " ")
+					embedding, embErr := embClient.GetEmbedding(keywordsText)
+					if embErr == nil {
+						embBytes := core.EmbeddingToBytes(embedding)
+						_, _ = database.Exec(
+							"INSERT OR REPLACE INTO task_embeddings (task_id, embedding) VALUES (?, ?)",
+							existingTask.ID, embBytes,
+						)
+					}
+				}
+				keywordsChanged = false // Already handled
+			}
+		}
+
+		// Recompute embedding if keywords changed and task is active.
+		if keywordsChanged && len(req.Keywords) > 0 && existingTask.Status == "active" {
 			keywordsText := strings.Join(req.Keywords, " ")
 			embedding, embErr := embClient.GetEmbedding(keywordsText)
 			if embErr == nil {
@@ -308,7 +345,7 @@ func GetMe(database *sql.DB) gin.HandlerFunc {
 
 		// Fetch tasks for this agent.
 		rows, err := database.Query(
-			"SELECT id, agent_id, task_id, mode, type, title, keywords, status, created_at FROM tasks WHERE agent_id = ?",
+			"SELECT id, agent_id, task_id, mode, type, title, keywords, status, created_at, updated_at FROM tasks WHERE agent_id = ?",
 			agent.ID,
 		)
 		if err != nil {
@@ -323,7 +360,7 @@ func GetMe(database *sql.DB) gin.HandlerFunc {
 		var tasks []dbpkg.Task
 		for rows.Next() {
 			var t dbpkg.Task
-			if err := rows.Scan(&t.ID, &t.AgentID, &t.TaskID, &t.Mode, &t.Type, &t.Title, &t.Keywords, &t.Status, &t.CreatedAt); err != nil {
+			if err := rows.Scan(&t.ID, &t.AgentID, &t.TaskID, &t.Mode, &t.Type, &t.Title, &t.Keywords, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
 				continue
 			}
 			tasks = append(tasks, t)

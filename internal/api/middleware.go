@@ -76,9 +76,17 @@ func AuthMiddleware(database *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Update last heartbeat.
 		now := time.Now().UTC().Format(time.RFC3339)
-		_, _ = database.Exec("UPDATE agents SET last_heartbeat = ? WHERE id = ?", now, agent.ID)
+
+		// Auto-wake: if agent was marked inactive by cleanup, reactivate on any request.
+		if agent.Status == "inactive" {
+			_, _ = database.Exec("UPDATE agents SET status = 'active', last_heartbeat = ? WHERE id = ?", now, agent.ID)
+			_, _ = database.Exec("UPDATE tasks SET status = 'active', updated_at = ? WHERE agent_id = ? AND status = 'inactive'", now, agent.ID)
+			agent.Status = "active"
+		} else {
+			// Update last heartbeat.
+			_, _ = database.Exec("UPDATE agents SET last_heartbeat = ? WHERE id = ?", now, agent.ID)
+		}
 
 		c.Set("agent", agent)
 		c.Next()

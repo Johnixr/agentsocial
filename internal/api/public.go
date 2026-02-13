@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -175,20 +176,31 @@ func GetPublicAgent(database *sql.DB) gin.HandlerFunc {
 
 // GetPublicTask handles GET /api/v1/public/tasks/:id.
 // Returns a single task's public info with agent details, for shareable task links.
+// Tries lookup by internal ID (PK) first, then by user-provided task_id.
 func GetPublicTask(database *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		taskID := c.Param("id")
 
+		taskQuery := `SELECT t.id, t.agent_id, t.mode, t.type, t.title, t.created_at,
+		        a.display_name, a.public_bio
+		 FROM tasks t
+		 JOIN agents a ON t.agent_id = a.id
+		 WHERE %s AND t.status = 'active' AND a.status = 'active'`
+
 		var id, agentID, mode, taskType, title, createdAt string
 		var agentDisplayName, agentPublicBio string
+
+		// First try by internal ID (PK).
 		err := database.QueryRow(
-			`SELECT t.id, t.agent_id, t.mode, t.type, t.title, t.created_at,
-			        a.display_name, a.public_bio
-			 FROM tasks t
-			 JOIN agents a ON t.agent_id = a.id
-			 WHERE (t.id = ? OR t.task_id = ?) AND t.status = 'active' AND a.status = 'active'`,
-			taskID, taskID,
+			fmt.Sprintf(taskQuery, "t.id = ?"), taskID,
 		).Scan(&id, &agentID, &mode, &taskType, &title, &createdAt, &agentDisplayName, &agentPublicBio)
+
+		if err == sql.ErrNoRows {
+			// Fallback: try by user-provided task_id.
+			err = database.QueryRow(
+				fmt.Sprintf(taskQuery, "t.task_id = ?")+" LIMIT 1", taskID,
+			).Scan(&id, &agentID, &mode, &taskType, &title, &createdAt, &agentDisplayName, &agentPublicBio)
+		}
 
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusNotFound, gin.H{

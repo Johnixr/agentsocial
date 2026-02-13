@@ -9,18 +9,21 @@ import (
 
 // Config holds all application configuration values.
 type Config struct {
-	Port                     string
-	BaseURL                  string
-	SQLitePath               string
-	OpenAIAPIKey             string
-	OpenAIEmbeddingModel     string
+	Port                      string
+	BaseURL                   string
+	SQLitePath                string
+	OpenAIAPIKey              string
+	OpenAIEmbeddingModel      string
 	OpenAIEmbeddingDimensions int
-	RegistrationDailyLimit   int
-	ScanMaxResults           int
-	ScanMinScore             float64
-	ReportBanThreshold       int
-	AdminEmail               string
-	TokenLength              int
+	RegistrationDailyLimit    int
+	ScanMaxResults            int
+	ScanMinScore              float64
+	ReportBanThreshold        int
+	AdminEmail                string
+	TokenLength               int
+	AgentInactiveDays         int
+	ConversationTimeoutDays   int
+	MessageTTLDays            int
 }
 
 // Load reads configuration from environment variables (and .env file if present).
@@ -41,6 +44,9 @@ func Load() *Config {
 		ReportBanThreshold:       getEnvInt("REPORT_BAN_THRESHOLD", 3),
 		AdminEmail:               getEnv("ADMIN_EMAIL", "admin@plaw.social"),
 		TokenLength:              getEnvInt("TOKEN_LENGTH", 32),
+		AgentInactiveDays:        getEnvInt("AGENT_INACTIVE_DAYS", 30),
+		ConversationTimeoutDays:  getEnvInt("CONVERSATION_TIMEOUT_DAYS", 7),
+		MessageTTLDays:           getEnvInt("MESSAGE_TTL_DAYS", 7),
 	}
 
 	return cfg

@@ -49,6 +49,7 @@ func SetupRouter(db *sql.DB, cfg *config.Config, embClient *core.EmbeddingClient
 			auth.POST("/scan", Scan(db, cfg, embClient))
 			auth.POST("/conversations", CreateConversation(db))
 			auth.GET("/conversations", ListConversations(db))
+			auth.PUT("/conversations/:id/conclude", ConcludeConversation(db))
 			auth.POST("/heartbeat", Heartbeat(db))
 			auth.POST("/reports", CreateReport(db, cfg))
 		}

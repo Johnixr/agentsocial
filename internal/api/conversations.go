@@ -64,8 +64,27 @@ func CreateConversation(database *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Compute deterministic conversation ID.
-		conversationID := core.ComputeConversationID(agent.ID, req.TargetAgentID, req.MyTaskID, req.TargetTaskID)
+		// Resolve task IDs — accept both internal hash ID and user-provided task_id.
+		myTaskInternalID := resolveTaskID(database, req.MyTaskID, agent.ID)
+		if myTaskInternalID == "" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "task_not_found",
+				"message": "Your task not found: " + req.MyTaskID,
+			})
+			return
+		}
+
+		targetTaskInternalID := resolveTaskID(database, req.TargetTaskID, req.TargetAgentID)
+		if targetTaskInternalID == "" {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "task_not_found",
+				"message": "Target task not found: " + req.TargetTaskID,
+			})
+			return
+		}
+
+		// Compute deterministic conversation ID using internal IDs.
+		conversationID := core.ComputeConversationID(agent.ID, req.TargetAgentID, myTaskInternalID, targetTaskInternalID)
 		now := time.Now().UTC().Format(time.RFC3339)
 
 		// Check if conversation already exists.
@@ -92,7 +111,7 @@ func CreateConversation(database *sql.DB) gin.HandlerFunc {
 		_, err = database.Exec(
 			`INSERT INTO conversations (id, initiator_agent, target_agent, initiator_task, target_task, state, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, 'pending_acceptance', ?, ?)`,
-			conversationID, agent.ID, req.TargetAgentID, req.MyTaskID, req.TargetTaskID, now, now,
+			conversationID, agent.ID, req.TargetAgentID, myTaskInternalID, targetTaskInternalID, now, now,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -120,6 +139,99 @@ func CreateConversation(database *sql.DB) gin.HandlerFunc {
 		c.JSON(http.StatusCreated, gin.H{
 			"conversation_id": conversationID,
 			"status":          "pending_acceptance",
+		})
+	}
+}
+
+// ConcludeConversationRequest is the body for PUT /api/v1/conversations/:id/conclude.
+type ConcludeConversationRequest struct {
+	Outcome string `json:"outcome" binding:"required"`
+}
+
+// ConcludeConversation handles PUT /api/v1/conversations/:id/conclude.
+// Either participant can conclude a conversation with an outcome of "matched" or "no_match".
+func ConcludeConversation(database *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		agent, ok := getAgent(c)
+		if !ok {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "unauthorized",
+				"message": "Authentication required",
+			})
+			return
+		}
+
+		convID := c.Param("id")
+
+		var req ConcludeConversationRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_request",
+				"message": "Invalid request body: " + err.Error(),
+			})
+			return
+		}
+
+		if req.Outcome != "matched" && req.Outcome != "no_match" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_outcome",
+				"message": "Outcome must be 'matched' or 'no_match'",
+			})
+			return
+		}
+
+		// Verify the conversation exists and the agent is a participant.
+		var initiatorAgent, targetAgent, state string
+		err := database.QueryRow(
+			"SELECT initiator_agent, target_agent, state FROM conversations WHERE id = ?",
+			convID,
+		).Scan(&initiatorAgent, &targetAgent, &state)
+
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "conversation_not_found",
+				"message": "Conversation not found",
+			})
+			return
+		}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "internal_error",
+				"message": "Failed to look up conversation",
+			})
+			return
+		}
+
+		if agent.ID != initiatorAgent && agent.ID != targetAgent {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "not_participant",
+				"message": "You are not a participant of this conversation",
+			})
+			return
+		}
+
+		// Map outcome to state.
+		newState := "concluded_no_match"
+		if req.Outcome == "matched" {
+			newState = "concluded_matched"
+		}
+
+		now := time.Now().UTC().Format(time.RFC3339)
+		_, err = database.Exec(
+			"UPDATE conversations SET state = ?, updated_at = ? WHERE id = ?",
+			newState, now, convID,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "internal_error",
+				"message": "Failed to conclude conversation",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"conversation_id": convID,
+			"state":           newState,
 		})
 	}
 }
@@ -180,4 +292,23 @@ func ListConversations(database *sql.DB) gin.HandlerFunc {
 			"conversations": conversations,
 		})
 	}
+}
+
+// resolveTaskID tries to find a task's internal ID. Accepts either the internal
+// hash ID (PK) or the user-provided task_id. Returns empty string if not found.
+func resolveTaskID(database *sql.DB, taskID string, agentID string) string {
+	// Try as internal ID first (PK lookup).
+	var id string
+	err := database.QueryRow("SELECT id FROM tasks WHERE id = ?", taskID).Scan(&id)
+	if err == nil {
+		return id
+	}
+
+	// Fallback: try as user-provided task_id scoped to the agent.
+	err = database.QueryRow("SELECT id FROM tasks WHERE task_id = ? AND agent_id = ?", taskID, agentID).Scan(&id)
+	if err == nil {
+		return id
+	}
+
+	return ""
 }
