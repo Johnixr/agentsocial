@@ -19,7 +19,7 @@ When the user says `/deploy`, determine what changed and run the appropriate dep
 
 | Item | Value |
 |------|-------|
-| Host | `claw` (SSH alias) / `172.245.159.112` |
+| Host | `claw` (SSH alias) |
 | Domain | `plaw.social` (Cloudflare proxied, SSL Flexible) |
 | Backend binary | `/opt/agentsocial/agentsocial` |
 | Frontend dist | `/opt/agentsocial/web/dist/` |
@@ -41,7 +41,7 @@ GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o agentsocial-linux-amd64 ./cmd/
 ### Frontend (React + Vite)
 
 ```bash
-cd /Users/john/workspace/oc/web && npx vite build
+cd web && npx vite build
 ```
 
 ## Upload
@@ -49,7 +49,7 @@ cd /Users/john/workspace/oc/web && npx vite build
 ### Backend
 
 ```bash
-scp /Users/john/workspace/oc/agentsocial-linux-amd64 claw:/opt/agentsocial/agentsocial-new
+scp agentsocial-linux-amd64 claw:/opt/agentsocial/agentsocial-new
 ```
 
 ### Frontend
@@ -58,7 +58,7 @@ scp /Users/john/workspace/oc/agentsocial-linux-amd64 claw:/opt/agentsocial/agent
 
 ```bash
 ssh claw "rm -rf /opt/agentsocial/web/dist"
-scp -r /Users/john/workspace/oc/web/dist claw:/opt/agentsocial/web/dist
+scp -r web/dist claw:/opt/agentsocial/web/dist
 ```
 
 ## Restart
@@ -73,8 +73,7 @@ ssh claw "systemctl stop agentsocial && mv /opt/agentsocial/agentsocial-new /opt
 
 ```bash
 ssh claw "systemctl is-active agentsocial"
-curl -s http://172.245.159.112/api/v1/public/stats | python3 -m json.tool
-curl -s http://172.245.159.112/ | head -5
+curl -s https://plaw.social/api/v1/public/stats | python3 -m json.tool
 ```
 
 ## Skill Deploy
@@ -82,10 +81,10 @@ curl -s http://172.245.159.112/ | head -5
 When OpenClaw skill files changed (under `skill/`):
 
 ```bash
-scp /Users/john/workspace/oc/skill/SKILL.md claw:/root/.openclaw/workspace/skills/agentsocial/SKILL.md
-scp /Users/john/workspace/oc/skill/README.md claw:/root/.openclaw/workspace/skills/agentsocial/README.md
-scp /Users/john/workspace/oc/skill/SOCIAL.md.template claw:/root/.openclaw/workspace/skills/agentsocial/SOCIAL.md.template
-scp -r /Users/john/workspace/oc/skill/references claw:/root/.openclaw/workspace/skills/agentsocial/references
+scp skill/SKILL.md claw:/root/.openclaw/workspace/skills/agentsocial/SKILL.md
+scp skill/README.md claw:/root/.openclaw/workspace/skills/agentsocial/README.md
+scp skill/SOCIAL.md.template claw:/root/.openclaw/workspace/skills/agentsocial/SOCIAL.md.template
+scp -r skill/references claw:/root/.openclaw/workspace/skills/agentsocial/references
 ```
 
 To publish to ClawHub (bump version each time):
@@ -112,22 +111,4 @@ ssh claw "cp /opt/agentsocial/data/agentsocial.db /opt/agentsocial/data/agentsoc
 
 # Query
 ssh claw "sqlite3 /opt/agentsocial/data/agentsocial.db '<SQL>'"
-```
-
-## .env
-
-Located at `/opt/agentsocial/.env`:
-
-```
-PORT=8080
-SQLITE_PATH=/opt/agentsocial/data/agentsocial.db
-BASE_URL=https://plaw.social
-OPENAI_API_KEY=sk-proj-...
-OPENAI_EMBEDDING_MODEL=text-embedding-3-large
-OPENAI_EMBEDDING_DIMENSIONS=256
-TOKEN_LENGTH=44
-REGISTRATION_DAILY_LIMIT=2
-MATCH_MAX_RESULTS=5
-MATCH_MIN_SCORE=0.5
-REPORT_BAN_THRESHOLD=3
 ```

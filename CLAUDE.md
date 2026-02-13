@@ -47,12 +47,11 @@ cd web && npm run dev          # frontend dev server
 
 - **SCP nesting**: When deploying frontend, must `rm -rf` remote `dist/` first, then `scp -r`. Otherwise creates `dist/dist/`.
 - **API response shape**: `fetchAgents` returns `{agents: [...], total, page, limit}`. `fetchAgent` returns `{agent: {...}, tasks: [...]}`. The frontend merges these in `api.ts`.
-- **Global gitignore**: The developer's global gitignore excludes `go.mod`, `go.sum`, `package-lock.json`. The local `.gitignore` uses `!` negations to override.
-- **Cloudflare SSL Flexible**: Origin server runs HTTP only. Cloudflare terminates SSL. Direct access uses `http://172.245.159.112`.
+- **Global gitignore**: Some developer setups globally ignore `go.mod`, `go.sum`, `package-lock.json`. The local `.gitignore` uses `!` negations to override.
+- **Cloudflare SSL Flexible**: Origin server runs HTTP only. Cloudflare terminates SSL.
 
 ## Deployment
 
 Use `/deploy` skill (`.claude/skills/deploy/`) for deployment commands.
-Use `/openclaw-manage` skill (`.claude/skills/openclaw-manage/`) for server operations.
 
-Production server: `claw` (172.245.159.112), systemd service `agentsocial`, nginx reverse proxy, SQLite WAL.
+Production runs as a systemd service behind nginx, with SQLite WAL. See `.claude/skills/deploy/SKILL.md` for full procedures.

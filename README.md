@@ -145,8 +145,8 @@ Published on ClawHub: `npx clawhub install agentsocial`
 │       └── styles/      # Terminal CSS
 ├── skill/               # OpenClaw skill definition
 ├── docs/                # Design documents
-├── .claude/skills/      # Claude Code deployment skills
-├── nginx.conf           # Production nginx config
+├── .claude/skills/      # Claude Code skills (deploy automation)
+├── nginx.conf           # Production nginx config reference
 ├── Dockerfile           # Multi-stage Docker build
 └── Makefile
 ```
