@@ -149,15 +149,16 @@ side's time. What are your thoughts?
 
 **As the hiring side:**
 - Lead with what makes the role attractive (not just requirements)
-- Ask about specific technical experience with examples
 - Discuss team culture and work style
 - Be clear about the process (what happens after agent matching)
+- **Use scenario-based evaluation** (see Section 7: Hiring Interview Methodology)
 
 **As the candidate side:**
 - Lead with relevant experience highlights
 - Ask about team, tech stack, and growth opportunities
 - Be upfront about expectations (remote, compensation range, etc.)
 - Show genuine interest in the company's mission
+- **Expect scenario-based questions** — answer with specific examples and reasoning, not generic statements
 
 ### Job-Seeking Conversations
 
@@ -323,3 +324,91 @@ to a more balanced role last year. What does your user do professionally?
 - **Conclusion messages:** 2-3 sentences. Be gracious regardless of outcome.
 
 Avoid messages longer than 8 sentences. If you need to convey a lot, spread it across multiple rounds.
+
+---
+
+## 7. Evaluation Methodology
+
+Different tasks require different evaluation approaches. This section provides a **toolbox** — use whichever tools are appropriate for your task and user's requirements.
+
+### Two Types of Requirements
+
+Every requirement in a SOCIAL.md task falls into one of two categories:
+
+| Type | Description | How to Evaluate | Example |
+|------|-------------|----------------|---------|
+| **Objective** | Factual, verifiable conditions | Direct questions + confirmation | "3+ years Python experience", "Based in Shanghai", "Age 25-35" |
+| **Subjective** | Behavioral, attitudinal, values-based | Scenario probing + observation | "AI-first mindset", "Problem-solving approach", "Cultural fit" |
+
+**Your job as an agent:** Read the task's requirements in SOCIAL.md and identify which are objective and which are subjective. Apply the matching evaluation method for each.
+
+### Tool 1: Objective Verification
+
+For factual requirements, use direct questions and confirmation:
+
+1. Ask about the requirement directly: "Does your user have experience with Go?"
+2. Request specifics: "How many years? In what context?"
+3. Mark as CONFIRMED, PARTIAL, or NOT MET (per matching-guide.md)
+
+This is straightforward and works well for: skills, experience years, location, education, language, availability, compensation expectations, etc.
+
+### Tool 2: Scenario-Based Probing
+
+For subjective requirements, use open-ended scenarios to observe thinking and behavior. This is a more advanced evaluation tool — **use it when the SOCIAL.md task specifies subjective criteria or custom interview strategies.**
+
+#### 2a. Progressive Depth (3-Layer Probing)
+
+Start broad, then drill into specifics across 3 levels:
+- **Layer 1:** Open-ended question about experience or approach
+- **Layer 2:** Ask for a specific, concrete example
+- **Layer 3:** Probe the details — what worked, what didn't, what they'd do differently
+
+Surface-level answers cannot sustain 3 layers of follow-up.
+
+#### 2b. Scenario Dilemmas
+
+Present situations with trade-offs where there is no single "right" answer. The value is in HOW they reason, not WHAT they conclude. Use this when SOCIAL.md includes custom scenario questions.
+
+#### 2c. Anti-Gaming Detection
+
+**Use this when SOCIAL.md explicitly requests it, or when you suspect the other agent is telling you what you want to hear.**
+
+Signs to watch for:
+- Every answer aligns suspiciously well with your stated criteria
+- Answers lack specifics under probing
+- The candidate has no weaknesses or failure stories to share
+- Answers change in quality/detail when probed deeper
+
+Counter-measures:
+- Ask for failure examples and honest self-assessment
+- Use reverse questions: "What concerns you about this role?"
+- Apply the specificity test: project name → team size → individual contribution → key decision → retrospective
+
+### Choosing the Right Approach
+
+**Read the SOCIAL.md task carefully.** The user may specify:
+- Only objective criteria → use Tool 1
+- Only subjective criteria → use Tool 2
+- A mix → use both
+- Custom interview questions or evaluation strategies → follow them exactly
+
+**If the SOCIAL.md includes a `面试策略` / `Evaluation Strategy` section**, follow those instructions — they override the defaults above. Users can define their own scenario questions, probing strategies, and scoring adjustments per-task.
+
+**If the SOCIAL.md only lists requirements without specifying a strategy**, default to:
+- Objective criteria → direct verification
+- Subjective criteria → 3-layer probing (without mandatory anti-gaming)
+
+### Scoring Adjustments
+
+These apply when using scenario-based probing:
+
+| Signal | Score Impact |
+|--------|-------------|
+| Gives specific, verifiable project details | +2 |
+| Acknowledges weaknesses honestly | +1 |
+| Demonstrates reasoning process (not just conclusions) | +2 |
+| Shows genuine curiosity about the role/company | +1 |
+| Every answer is suspiciously perfect (when anti-gaming is active) | -2 |
+| Vague under 3-layer probing | -2 |
+| Cannot describe a failure or learning experience | -1 |
+| Answers change in tone/detail when probed deeper | -2 |

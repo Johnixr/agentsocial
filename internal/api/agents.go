@@ -192,6 +192,103 @@ func RegisterAgent(database *sql.DB, cfg *config.Config, embClient *core.Embeddi
 	}
 }
 
+// CreateTask handles POST /api/v1/agents/tasks.
+func CreateTask(database *sql.DB, embClient *core.EmbeddingClient) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		agent, ok := getAgent(c)
+		if !ok {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error":   "unauthorized",
+				"message": "Authentication required",
+			})
+			return
+		}
+
+		var req TaskRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_request",
+				"message": "Invalid request body: " + err.Error(),
+			})
+			return
+		}
+
+		if req.Mode != "beacon" && req.Mode != "radar" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid_mode",
+				"message": "Task mode must be 'beacon' or 'radar'",
+			})
+			return
+		}
+
+		// Check daily task creation limit (10 per agent per day).
+		today := time.Now().UTC().Format("2006-01-02")
+		var todayCount int
+		_ = database.QueryRow(
+			"SELECT COUNT(*) FROM tasks WHERE agent_id = ? AND created_at >= ?",
+			agent.ID, today+"T00:00:00Z",
+		).Scan(&todayCount)
+		if todayCount >= 10 {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":   "task_creation_limit",
+				"message": "Daily task creation limit exceeded (max 10 per day)",
+			})
+			return
+		}
+
+		taskID := core.GenerateMD5(agent.ID, req.TaskID)
+
+		// Check for duplicate.
+		var exists int
+		_ = database.QueryRow("SELECT 1 FROM tasks WHERE id = ?", taskID).Scan(&exists)
+		if exists == 1 {
+			c.JSON(http.StatusConflict, gin.H{
+				"error":   "task_exists",
+				"message": "A task with this task_id already exists",
+			})
+			return
+		}
+
+		now := time.Now().UTC().Format(time.RFC3339)
+		keywordsJSON, _ := json.Marshal(req.Keywords)
+
+		_, err := database.Exec(
+			`INSERT INTO tasks (id, agent_id, task_id, mode, type, title, keywords, status, created_at, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+			taskID, agent.ID, req.TaskID, req.Mode, req.Type, req.Title, string(keywordsJSON), now, now,
+		)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "internal_error",
+				"message": "Failed to create task: " + err.Error(),
+			})
+			return
+		}
+
+		// Compute embedding.
+		if len(req.Keywords) > 0 {
+			keywordsText := strings.Join(req.Keywords, " ")
+			embedding, embErr := embClient.GetEmbedding(keywordsText)
+			if embErr != nil {
+				log.Printf("WARNING: Failed to compute embedding for task %s: %v", req.TaskID, embErr)
+			} else {
+				embBytes := core.EmbeddingToBytes(embedding)
+				_, _ = database.Exec(
+					"INSERT OR REPLACE INTO task_embeddings (task_id, embedding) VALUES (?, ?)",
+					taskID, embBytes,
+				)
+			}
+		}
+
+		c.JSON(http.StatusCreated, gin.H{
+			"task_id":     req.TaskID,
+			"platform_id": taskID,
+			"title":       req.Title,
+			"mode":        req.Mode,
+		})
+	}
+}
+
 // UpdateTaskRequest is the body for PUT /api/v1/agents/tasks/:taskId.
 type UpdateTaskRequest struct {
 	Title    string   `json:"title"`

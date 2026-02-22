@@ -44,6 +44,20 @@ KEYWORDS GUIDE:
   Keywords are used for embedding-based matching. Use individual words or short phrases.
   Good: "AI, backend, Python, distributed systems, startup"
   Bad: "Looking for someone who knows Python and has backend experience"
+
+REQUIREMENTS GUIDE:
+  Requirements come in two types. Your Agent uses different evaluation methods for each:
+  - Objective: Factual, verifiable conditions (skills, experience, location, age, etc.)
+    → Agent verifies these through direct questions and confirmation.
+  - Subjective: Behavioral, attitudinal, values-based (mindset, culture fit, thinking style)
+    → Agent evaluates these through scenario-based probing and observation.
+  Mark each requirement clearly so your Agent knows how to evaluate it.
+
+EVALUATION STRATEGY (OPTIONAL):
+  For tasks that need deeper evaluation (e.g., hiring for culture fit, dating for values),
+  you can add an "Evaluation Strategy" section with custom interview questions, probing
+  methods, or anti-gaming rules. See the examples below. If omitted, the Agent uses
+  default evaluation methods based on requirement types.
 -->
 
 ### task-001
@@ -58,32 +72,110 @@ KEYWORDS GUIDE:
     For partnership: describe your project and what kind of co-founder you need.
     For networking: describe your interests and what connections you're seeking.]
 - **Requirements:** |
-    [List specific requirements or preferences, one per line.
-    These are used by your Agent to evaluate matches.
-    - Requirement 1
-    - Requirement 2
-    - Requirement 3]
+    Objective:
+    - [Factual requirement, e.g., "3+ years backend experience"]
+    - [Factual requirement, e.g., "Proficient in Python or Go"]
+    Subjective:
+    - [Behavioral requirement, e.g., "Proactive problem-solver, doesn't wait for instructions"]
+    - [Values requirement, e.g., "Genuinely passionate about AI, not just using it as a buzzword"]
 - **Keywords:** [word1, word2, word3, word4, word5]
 - **Contact:** |
-    [OPTIONAL - Task-specific contact info. If blank, the global Contact above is used.
-    Useful when different tasks should route to different contacts.
-    Example: "hiring@mycompany.com" for a hiring task]
+    [OPTIONAL - Task-specific contact info. If blank, the global Contact above is used.]
+- **Evaluation Strategy:** |
+    [OPTIONAL - Custom evaluation approach for this task. If omitted, Agent uses defaults.
+    You can specify:
+    - Custom scenario questions (open-ended, no single correct answer)
+    - Probing depth (how many layers to dig)
+    - Anti-gaming rules (if you want the Agent to detect and penalize rehearsed answers)
+    - Scoring adjustments (what signals to reward or penalize)
+    See examples below for inspiration.]
 
 <!--
-To add more tasks, copy the block above and change the task ID.
-Example:
+EXAMPLES:
 
-### task-002
-- **Mode:** radar
-- **Type:** job-seeking
-- **Title:** Looking for Senior Frontend Roles
+Example 1: Simple hiring (mostly objective)
+
+### backend-engineer
+- **Mode:** beacon
+- **Type:** hiring
+- **Title:** Backend Engineer - Python/Go
 - **Description:** |
-    3 years React/TypeScript experience, interested in AI products...
+    We need a backend engineer for our API team. Tech stack: Go + Python, PostgreSQL.
 - **Requirements:** |
-    - Remote-friendly or based in Beijing/Shanghai
-    - Product-focused team
-    - Competitive compensation
-- **Keywords:** frontend, React, TypeScript, AI, product, senior
-- **Contact:** |
-    myemail@example.com
+    Objective:
+    - 2+ years backend development experience
+    - Proficient in Python or Go
+    - Experience with SQL databases
+    Subjective:
+    - Good communicator, can explain technical decisions clearly
+- **Keywords:** backend, Python, Go, API, PostgreSQL, engineer
+
+(No Evaluation Strategy needed — Agent will verify objective criteria via Q&A
+and assess communication quality through conversation naturally.)
+
+
+Example 2: Hiring with deep subjective evaluation
+
+### ai-engineer
+- **Mode:** beacon
+- **Type:** hiring
+- **Title:** AI Engineer — AI-first thinker
+- **Description:** |
+    We need someone who uses AI as their primary tool, not an add-on.
+- **Requirements:** |
+    Objective:
+    - Computer science degree or equivalent
+    - Can code in at least one of: Python, Go, TypeScript
+    Subjective:
+    - AI-first mindset: reaches for AI before manual solutions
+    - Problem-terminator: owns problems end-to-end, doesn't wait for specs
+    - Self-aware: knows their strengths AND weaknesses
+- **Evaluation Strategy:** |
+    Use scenario-based probing for all subjective requirements.
+    Anti-gaming: enabled — if every answer is too perfect, probe harder.
+    Scenario questions:
+    1. "You get a vague requirement with a tomorrow deadline. You could use AI
+       to ship something rough fast, or take 3 days to hand-craft it properly.
+       Walk me through your decision process."
+    2. "Describe a project you failed at or a decision you regret. What happened
+       and what did you learn?"
+    Scoring: +2 for honest self-assessment, -2 for suspiciously perfect answers.
+
+
+Example 3: Dating (mostly objective)
+
+### find-partner
+- **Mode:** radar
+- **Type:** dating
+- **Title:** Looking for a life partner in Shanghai
+- **Requirements:** |
+    Objective:
+    - Based in Shanghai or willing to relocate
+    - Age 25-35
+    - Non-smoker
+    Subjective:
+    - Values work-life balance
+    - Enjoys outdoor activities
+- **Keywords:** Shanghai, dating, hiking, work-life balance, relationship
+
+
+Example 4: Partnership (mixed)
+
+### co-founder
+- **Mode:** radar
+- **Type:** partnership
+- **Title:** Looking for a technical co-founder
+- **Requirements:** |
+    Objective:
+    - Available full-time (not a side project)
+    - Technical background (can build the product)
+    Subjective:
+    - Complementary skills to mine (I'm business/product)
+    - Aligned on vision: AI-native products, not AI-washed legacy
+    - Can commit for at least 2 years
+- **Evaluation Strategy:** |
+    Focus on vision alignment in Phase 2. Ask:
+    1. "What does 'AI-native product' mean to you? Give an example of one
+       that exists and one that should exist but doesn't."
+    2. "What's your biggest concern about co-founding a startup right now?"
 -->

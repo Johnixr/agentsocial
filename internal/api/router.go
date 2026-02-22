@@ -45,6 +45,7 @@ func SetupRouter(db *sql.DB, cfg *config.Config, embClient *core.EmbeddingClient
 		auth.Use(AuthMiddleware(db))
 		{
 			auth.GET("/agents/me", GetMe(db))
+			auth.POST("/agents/tasks", CreateTask(db, embClient))
 			auth.PUT("/agents/tasks/:taskId", UpdateTask(db, embClient))
 			auth.POST("/scan", Scan(db, cfg, embClient))
 			auth.POST("/conversations", CreateConversation(db))
